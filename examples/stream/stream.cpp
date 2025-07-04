@@ -163,10 +163,6 @@ int main(int argc, char ** argv) {
     cparams.flash_attn = params.flash_attn;
 
     struct whisper_context * ctx = whisper_init_from_file_with_params(params.model.c_str(), cparams);
-    if (ctx == nullptr) {
-        fprintf(stderr, "error: failed to initialize whisper context\n");
-        return 2;
-    }
 
     std::vector<float> pcmf32    (n_samples_30s, 0.0f);
     std::vector<float> pcmf32_old;
@@ -210,7 +206,7 @@ int main(int argc, char ** argv) {
 
     std::ofstream fout;
     if (params.fname_out.length() > 0) {
-        fout.open(params.fname_out);
+        fout.open(params.fname_out, std::ios::out | std::ios::binary);
         if (!fout.is_open()) {
             fprintf(stderr, "%s: failed to open output file '%s'!\n", __func__, params.fname_out.c_str());
             return 1;
@@ -233,6 +229,9 @@ int main(int argc, char ** argv) {
 
     auto t_last  = std::chrono::high_resolution_clock::now();
     const auto t_start = t_last;
+
+    // A buffer to hold the text of the current line.
+    std::string current_line_text;
 
     // main audio loop
     while (is_running) {
@@ -350,6 +349,10 @@ int main(int argc, char ** argv) {
                     printf("%s", std::string(100, ' ').c_str());
 
                     printf("\33[2K\r");
+
+                    // 1. Clear the buffer for the new line text
+                    current_line_text.clear();
+
                 } else {
                     const int64_t t1 = (t_last - t_start).count()/1000000;
                     const int64_t t0 = std::max(0.0, t1 - pcmf32.size()*1000.0/WHISPER_SAMPLE_RATE);
@@ -367,9 +370,9 @@ int main(int argc, char ** argv) {
                         printf("%s", text);
                         fflush(stdout);
 
-                        if (params.fname_out.length() > 0) {
-                            fout << text;
-                        }
+                        // 2. Instead of writing to file, append to our buffer
+                        current_line_text += text;
+
                     } else {
                         const int64_t t0 = whisper_full_get_segment_t0(ctx, i);
                         const int64_t t1 = whisper_full_get_segment_t1(ctx, i);
@@ -391,10 +394,6 @@ int main(int argc, char ** argv) {
                     }
                 }
 
-                if (params.fname_out.length() > 0) {
-                    fout << std::endl;
-                }
-
                 if (use_vad) {
                     printf("\n");
                     printf("### Transcription %d END\n", n_iter);
@@ -405,6 +404,11 @@ int main(int argc, char ** argv) {
 
             if (!use_vad && (n_iter % n_new_line) == 0) {
                 printf("\n");
+
+                // Write the committed line to the file
+                if (params.fname_out.length() > 0) {
+                    fout << current_line_text << std::endl;
+                }
 
                 // keep part of the audio for next iteration to try to mitigate word boundary issues
                 pcmf32_old = std::vector<float>(pcmf32.end() - n_samples_keep, pcmf32.end());
@@ -424,6 +428,11 @@ int main(int argc, char ** argv) {
             }
             fflush(stdout);
         }
+    }
+
+    // Write the final (uncommitted) line to the file
+    if (params.fname_out.length() > 0 && !current_line_text.empty()) {
+        fout << current_line_text << std::endl;
     }
 
     audio.pause();
