@@ -17,5 +17,7 @@ Fasse das folgende Transkript in diesem Template zusammen (ohne die xml template
 
 </template>
 
+Hier ist etwas zusätzlicher Kontext zu unserem Unternehmen, der dabei helfen soll das folgende Transkript besser zu verstehen. Wir sind die vent.io. Wir entwickeln digitale Produkte, Kundenschnittstellen und Data Science Projekte für die Deutsche Leasing. Dabei arbeiten wir mit verschiedenen Fachbereichen und Geschäftsfeldern zusammen, z.B. Mobility, Sparkasse und Mittelstand (SuM), Tax, Risiko Controlling und Analyse, etc. Die Kernsysteme der Deutsche Leasing werden von anderen Dienstleistern oder der Organisation IT (OrgIT) entwickelt und von der OrgIT in einem eigenen Rechenzentrum betrieben.
+
 Transkript:
 
