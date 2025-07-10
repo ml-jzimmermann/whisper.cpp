@@ -33,6 +33,7 @@ struct whisper_params {
     bool print_special = false;
     bool no_context    = true;
     bool no_timestamps = false;
+    bool add_timestamp = false; // add timestamp to file output
     bool tinydiarize   = false;
     bool save_audio    = false; // save audio to wav file
     bool use_gpu       = true;
@@ -70,6 +71,7 @@ static bool whisper_params_parse(int argc, char ** argv, whisper_params & params
         else if (arg == "-l"    || arg == "--language")      { params.language      = argv[++i]; }
         else if (arg == "-m"    || arg == "--model")         { params.model         = argv[++i]; }
         else if (arg == "-f"    || arg == "--file")          { params.fname_out     = argv[++i]; }
+        else if (arg == "-ts"   || arg == "--timestamp")     { params.add_timestamp = true; }
         else if (arg == "-tdrz" || arg == "--tinydiarize")   { params.tinydiarize   = true; }
         else if (arg == "-sa"   || arg == "--save-audio")    { params.save_audio    = true; }
         else if (arg == "-ng"   || arg == "--no-gpu")        { params.use_gpu       = false; }
@@ -108,6 +110,7 @@ void whisper_print_usage(int /*argc*/, char ** argv, const whisper_params & para
     fprintf(stderr, "  -l LANG,  --language LANG [%-7s] spoken language\n",                                params.language.c_str());
     fprintf(stderr, "  -m FNAME, --model FNAME   [%-7s] model path\n",                                     params.model.c_str());
     fprintf(stderr, "  -f FNAME, --file FNAME    [%-7s] text output file name\n",                          params.fname_out.c_str());
+    fprintf(stderr, "  -ts,      --timestamp     [%-7s] add timestamp to file output\n",                  params.add_timestamp ? "true" : "false");
     fprintf(stderr, "  -tdrz,    --tinydiarize   [%-7s] enable tinydiarize (requires a tdrz model)\n",     params.tinydiarize ? "true" : "false");
     fprintf(stderr, "  -sa,      --save-audio    [%-7s] save the recorded audio to a file\n",              params.save_audio ? "true" : "false");
     fprintf(stderr, "  -ng,      --no-gpu        [%-7s] disable GPU inference\n",                          params.use_gpu ? "false" : "true");
@@ -407,7 +410,13 @@ int main(int argc, char ** argv) {
 
                 // Write the committed line to the file
                 if (params.fname_out.length() > 0) {
-                    fout << current_line_text << std::endl;
+                    if (params.add_timestamp) {
+                        const auto t_now = std::chrono::high_resolution_clock::now();
+                        const auto t_diff_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_now - t_start).count();
+                        fout << "[" << t_diff_ms << "] " << current_line_text << std::endl;
+                    } else {
+                        fout << current_line_text << std::endl;
+                    }
                 }
 
                 // keep part of the audio for next iteration to try to mitigate word boundary issues
@@ -432,7 +441,13 @@ int main(int argc, char ** argv) {
 
     // Write the final (uncommitted) line to the file
     if (params.fname_out.length() > 0 && !current_line_text.empty()) {
-        fout << current_line_text << std::endl;
+        if (params.add_timestamp) {
+            const auto t_now = std::chrono::high_resolution_clock::now();
+            const auto t_diff_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_now - t_start).count();
+            fout << "[" << t_diff_ms << "] " << current_line_text << std::endl;
+        } else {
+            fout << current_line_text << std::endl;
+        }
     }
 
     audio.pause();
