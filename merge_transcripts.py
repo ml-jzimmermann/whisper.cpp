@@ -16,7 +16,7 @@ def merge_files(input_files, output_file):
 
     for filepath in input_files:
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
                     match = line_regex.match(line)
                     if match:
