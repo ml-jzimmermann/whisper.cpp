@@ -1,4 +1,4 @@
-Fasse das folgende Transkript in diesem Template zusammen (ohne die xml template tags). Ersetze den Meeting Title durch einen sinnvollen Titel (ohne die [, ] Klammern). Die Punkte "Open Questions" und "Tasks" sind optional. Nutze sie nur, wenn notwendig. Wenn sie keinen Inhalt haben, lass sie komplett weg. Du brauchst die einzelnen Stichpunkte nicht mit Punkten abzuschließen. Orientiere dich für den Output an der Sprache des Transcripts, wenn das Transcript in Englisch ist, sollen die Notizen in Englisch sein. Antworte in markdown:
+Fasse das folgende Transkript in diesem Template zusammen (ohne die xml template tags). Verwende Stichpunkte. Du kannst Unterpunkte erstellen, wenn notwendig. Ersetze den Meeting Title durch einen sinnvollen Titel (ohne die [, ] Klammern). Die Punkte "Open Questions" und "Tasks" sind optional. Nutze sie nur, wenn notwendig. Wenn sie keinen Inhalt haben, lass sie komplett weg. Verwende keine Punkte am Ende der Stichpunkte. Orientiere dich für den Output an der Sprache des Transkripts, wenn das Transkript in Englisch ist, sollen die Notizen in Englisch sein. Antworte in markdown:
 
 <template>
 [Meeting Title]

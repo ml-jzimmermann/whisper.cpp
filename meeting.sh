@@ -32,54 +32,54 @@ fi
 echo ""
 echo "Final filename will be based on: ${final_title_base}.txt"
 echo "----------------------------------------------------"
-echo "Choose your audio device(s):"
 
-# Execute the system_profiler command with the advanced perl script
-# to list only input devices with their proper names.
-system_profiler SPAudioDataType | perl -lne '
-    # This subroutine processes the data we have collected for the *previous* block.
+# Step 1: Generate a machine-readable list of input devices in the format "ID:Name".
+# We modify the Perl script slightly to produce this simple format instead of the pretty one.
+device_list=$(system_profiler SPAudioDataType | perl -lne '
     sub process_and_print {
-        # Only print if we determined it was an input device.
         if ($is_input) {
-            # Decide on the name. Use the specific source unless it is "Default".
             my $name_to_print = ($input_source ne "Default" ? $input_source : $device_name);
-            printf "  %d: %s\n", $index++, $name_to_print;
+            # Output in a simple "ID:Name" format for easy parsing later.
+            printf "%d:%s\n", $index++, $name_to_print;
         }
     }
 
-    # FIX: Use a precise regex for a device header line.
-    # It must start with exactly 8 spaces, then a non-space character, and end with a colon.
     if (/^\s{8}(\S.*):\s*$/) {
-        # A new device header was found. First, process the one we just finished collecting.
         process_and_print();
-
-        # Now, reset the state for the new device.
         $device_name = $1;
         $is_input = 0;
-        $input_source = "Default"; # Assume "Default" until told otherwise
+        $input_source = "Default";
     }
-    # Check for properties of the current device.
     elsif (/^\s+Input Channels:/) {
         $is_input = 1;
     }
     elsif (/^\s+Input Source:\s*(.*)/) {
         $input_source = $1;
     }
-
-    # This special block runs once after the entire file has been read.
     END {
-        # Process the very last device that was in the file.
         process_and_print();
     }
-'
+')
 
+# Step 2: Find the ID for "MacBook Pro Microphone" from our generated list.
+# We grep for the name, then use cut to extract the ID (the part before the first colon).
+# `head -n 1` ensures we only get one ID if there are duplicates for some reason.
+mbp_mic_id=$(echo "$device_list" | grep "MacBook Pro Microphone" | cut -d: -f1 | head -n 1)
+
+# Step 3: Set the final default. Use the found ID, or fall back to 0 if it wasn't found.
+default_id=${mbp_mic_id:-0}
+
+# Step 4: Display the nicely formatted list and the prompt to the user.
+# Use awk to reformat the "ID:Name" list into a pretty "  ID: Name" list for the user.
+echo "Choose your audio device(s):"
+echo "$device_list" | awk -F: '{printf "  %s: %s\n", $1, $2}'
 echo "----------------------------------------------------"
 
-### Updated prompt to ask for multiple, comma-separated IDs.
-read -p "Please enter desired input device ID(s) [default: 0]: " user_choices
+# Step 5: Prompt the user, now with our dynamically found default ID.
+read -p "Please enter desired input device ID(s) [default: $default_id]: " user_choices
 
-# Set the final device IDs.
-device_ids=${user_choices:-0}
+# Set the final device IDs using the user's choice or our dynamic default.
+device_ids=${user_choices:-$default_id}
 
 # Print a confirmation message with the selected IDs.
 echo ""
